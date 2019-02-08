@@ -1,5 +1,5 @@
 <?php
-class ControllerExtensionExportImport extends Controller { 
+class ControllerExtensionExportImport extends Controller {
 	private $error = array();
 	private $ssl = 'SSL';
 
@@ -25,7 +25,35 @@ class ControllerExtensionExportImport extends Controller {
 			if ((isset( $this->request->files['upload'] )) && (is_uploaded_file($this->request->files['upload']['tmp_name']))) {
 				$file = $this->request->files['upload']['tmp_name'];
 				$incremental = ($this->request->post['incremental']) ? true : false;
-				if ($this->model_extension_export_import->upload($file,$this->request->post['incremental'])==true) {
+
+
+                set_time_limit(0);
+                $success = true;
+
+                $readyFilesRaw = file_get_contents('import.info');
+                $readyFiles = explode("\n", $readyFilesRaw);
+                array_filter($readyFiles);
+                array_map('trim', $readyFiles);
+
+                $dir = new DirectoryIterator(__DIR__ . '/import');
+                foreach ($dir as $fileinfo) {
+                    if (!$fileinfo->isDot()) {
+                        if (!in_array($fileinfo->getFilename(), $readyFiles)) {
+                            $fName = __DIR__ . '/import/' . $fileinfo->getFilename();
+                            file_put_contents('import.log', $fName . "\n", FILE_APPEND);
+                            if ($this->model_extension_export_import->upload($fName, 1) != true) {
+                                file_put_contents('import.log', 'НЕУСПЕШНО: ' . $fName . "\n", FILE_APPEND);
+                                $success = false;
+                                $this->error['warning'] = "File $fName was WRONG !!!";
+                                break;
+                            }
+                            file_put_contents('import.info', $fileinfo->getFilename() . "\n", FILE_APPEND);
+                        }
+                    }
+                }
+
+                //if ($this->model_extension_export_import->upload($file,$this->request->post['incremental'])==true) {
+                if ($success) {
 					$this->session->data['success'] = $this->language->get('text_success');
 					$this->response->redirect($this->url->link('extension/export_import', 'user_token=' . $this->session->data['user_token'], $this->ssl));
 				}
@@ -43,7 +71,7 @@ class ControllerExtensionExportImport extends Controller {
 	protected function return_bytes($val)
 	{
 		$val = trim($val);
-	
+
 		switch (strtolower(substr($val, -1)))
 		{
 			case 'm': $val = (int)substr($val, 0, -1) * 1048576; break;
@@ -134,7 +162,7 @@ class ControllerExtensionExportImport extends Controller {
 	protected function getForm() {
 		$data = array();
 		$data['heading_title'] = $this->language->get('heading_title');
-		
+
 		$data['exist_filter'] = $this->model_extension_export_import->existFilter();
 
 		$data['text_export_type_category'] = ($data['exist_filter']) ? $this->language->get('text_export_type_category') : $this->language->get('text_export_type_category_old');
@@ -218,7 +246,7 @@ class ControllerExtensionExportImport extends Controller {
 
 		if (isset($this->session->data['success'])) {
 			$data['success'] = $this->session->data['success'];
-		
+
 			unset($this->session->data['success']);
 		} else {
 			$data['success'] = '';
@@ -347,7 +375,7 @@ class ControllerExtensionExportImport extends Controller {
 		$min_customer_id = $this->model_extension_export_import->getMinCustomerId();
 		$max_customer_id = $this->model_extension_export_import->getMaxCustomerId();
 		$count_customer = $this->model_extension_export_import->getCountCustomer();
-		
+
 		$data['text_used_category_ids'] = str_replace('%1',$min_category_id,$data['text_used_category_ids']);
 		$data['text_used_category_ids'] = str_replace('%2',$max_category_id,$data['text_used_category_ids']);
 		$data['text_used_product_ids'] = str_replace('%1',$min_product_id,$data['text_used_product_ids']);
