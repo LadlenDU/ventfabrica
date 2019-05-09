@@ -5649,7 +5649,8 @@ class ModelToolExportImport extends Model {
 					}
 				}
 			}
-			foreach ($keyword_counts as $keyword=>$count) {
+			//TODO: временно отклюим - Ladlen
+			/*foreach ($keyword_counts as $keyword=>$count) {
 				if ($count > 1) {
 					$msg = $this->language->get( 'error_unique_keyword' );
 					$msg = str_replace( '%1', $keyword, $msg );
@@ -5658,7 +5659,7 @@ class ModelToolExportImport extends Model {
 					$this->log->write( $msg );
 					$ok = false;
 				}
-			}
+			}*/
 		}
 		
 		return $ok;
