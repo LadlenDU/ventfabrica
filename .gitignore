@@ -2,3 +2,7 @@
 admin/controller/extension/import
 image/cache
 image/catalog/vent
+
+storage
+
+.idea
